@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Documents/">
+    <File Path="ImplemantationPlan.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="EquipmentBookingSystem1.Application/EquipmentBookingSystem1.Application.csproj" />
+  <Project Path="EquipmentBookingSystem1.Domain/EquipmentBookingSystem1.Domain.csproj" />
+  <Project Path="EquipmentBookingSystem1.Infrastructure/EquipmentBookingSystem1.Infrastructure.csproj" />
+  <Project Path="EquipmentBookingSystem1.Presentation/EquipmentBookingSystem1.Presentation.csproj" />
+</Solution>
