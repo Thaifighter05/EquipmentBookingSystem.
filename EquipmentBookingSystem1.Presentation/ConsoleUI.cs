@@ -1,93 +1,56 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿
+using EquipmentBookingSystem1.Infrastructure;
 using EquipmentBookingSystem1.Application;
 using EquipmentBookingSystem1.Domain;
-using EquipmentBookingSystem1.Infrastructure;
-
+using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
 
 namespace EquipmentBookingSystem.Presentation;
 
 public class ConsoleUI
 {
-    private readonly BookingService _bookingService;
-    private readonly Guid _customerId;
-    private readonly Guid _modelId;
-
-    public ConsoleUI(
-        BookingService bookingService,
-        Guid customerId,
-        Guid modelId)
-    {
-        _bookingService = bookingService;
-        _customerId = customerId;
-        _modelId = modelId;
-    }
-
-    public void Run()
-    {
-        Console.WriteLine("Välkommen till bokningssystemet!");
-
-        bool bookAnotherModel = true;
-
-        while (bookAnotherModel)
-        {
-            Console.WriteLine();
-            Console.WriteLine("Boka utrustningsmodell: Testmodell");
-
-            Console.Write("Startdatum (åååå-mm-dd): ");
-            string? startInput = Console.ReadLine();
-
-            Console.Write("Slutdatum (åååå-mm-dd): ");
-            string? endInput = Console.ReadLine();
-
-            if (!DateOnly.TryParse(startInput, out DateOnly startDate) ||
-                !DateOnly.TryParse(endInput, out DateOnly endDate))
-            {
-                Console.WriteLine("Felaktigt datumformat.");
-                continue;
-            }
-
-            // Steg 2: Skicka bokningsförfrågan
-            BookingResult result = _bookingService.CreateBooking(
-                _customerId,
-                _modelId,
-                startDate,
-                endDate);
-
-            // Steg 19–20: Visa resultat
-            if (result.IsSuccess && result.Booking != null)
-            {
-                Console.WriteLine("Bokningen lyckades!");
-                Console.WriteLine(
-                    $"Bokningsnummer: {result.Booking.BookingNumber}");
-            }
-            else
-            {
-                Console.WriteLine(
-                    $"Fel: {result.ErrorMessage}");
-            }
-
-            // Steg 21–22: Fråga om fler bokningar
-            Console.Write("Vill du göra en ny bokning? (j/n): ");
-            bookAnotherModel =
-                Console.ReadLine()?.Trim().ToLower() == "j";
-        }
-    }
-
     public static void Main(string[] args)
     {
-        var services = new ServiceCollection();
-
-        // Testdata: En modell med ett fysiskt exemplar
-        Guid modelId = Guid.NewGuid();
+        // Tillfällig kund eftersom vi inte har inloggning
         Guid customerId = Guid.NewGuid();
 
+        // Två olika utrustningsmodeller
+        Guid cameraModelId = Guid.NewGuid();
+        Guid projectorModelId = Guid.NewGuid();
+
+        // Två kameror och en projektor
         var equipmentItems = new List<EquipmentItem>
         {
-            new EquipmentItem(Guid.NewGuid(), modelId)
+            new EquipmentItem(Guid.NewGuid(), cameraModelId),
+            new EquipmentItem(Guid.NewGuid(), cameraModelId),
+            new EquipmentItem(Guid.NewGuid(), projectorModelId)
         };
 
-        // Registrera beroenden
+        // TEST: Visa alla utrustningars unika exemplar-ID och modell-ID
+        Console.WriteLine("=== TEST: Registrerad utrustning ===");
+
+        foreach (EquipmentItem item in equipmentItems)
+        {
+            string modelName = item.ModelId == cameraModelId
+                ? "Kamera"
+                : "Projektor";
+
+            Console.WriteLine(
+                $"{modelName} | Exemplar-ID: {item.Id} | Modell-ID: {item.ModelId}");
+        }
+
+        Console.WriteLine();
+
+        // Dependency Injection
+        var services = new ServiceCollection();
+
+        // Vanligt läge: Sparar bokningar i minnet.
         services.AddSingleton<IBookingRepository, InMemoryBookingRepository>();
+
+        // TEST steg 16: Simulerar att sparandet misslyckas.
+        // För att testa: Kommentera bort raden ovan och ta bort // på raden nedan.
+        // Byt tillbaka efter testet.
+        // services.AddSingleton<IBookingRepository, FailingBookingRepository>();
 
         services.AddSingleton<IReadOnlyList<EquipmentItem>>(equipmentItems);
 
@@ -100,11 +63,133 @@ public class ConsoleUI
         BookingService bookingService =
             serviceProvider.GetRequiredService<BookingService>();
 
-        var consoleUI = new ConsoleUI(
-            bookingService,
-            customerId,
-            modelId);
+        IBookingRepository bookingRepository =
+            serviceProvider.GetRequiredService<IBookingRepository>();
 
-        consoleUI.Run();
+        Console.WriteLine("Välkommen till bokningssystemet!");
+
+        bool bookAnotherModel = true;
+
+        while (bookAnotherModel)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Välj utrustningsmodell:");
+            Console.WriteLine("1. Kamera (2 exemplar)");
+            Console.WriteLine("2. Projektor (1 exemplar)");
+            Console.Write("Ditt val: ");
+
+            string? modelChoice = Console.ReadLine();
+
+            Guid selectedModelId;
+            string selectedModelName;
+
+            if (modelChoice == "1")
+            {
+                selectedModelId = cameraModelId;
+                selectedModelName = "Kamera";
+            }
+            else if (modelChoice == "2")
+            {
+                selectedModelId = projectorModelId;
+                selectedModelName = "Projektor";
+            }
+            else
+            {
+                Console.WriteLine("Fel: Ogiltigt modellval.");
+                continue;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine($"Boka utrustningsmodell: {selectedModelName}");
+
+            // Steg 1: Kunden anger datum
+            Console.Write("Startdatum (åååå-mm-dd): ");
+            string? startInput = Console.ReadLine();
+
+            Console.Write("Slutdatum (åååå-mm-dd): ");
+            string? endInput = Console.ReadLine();
+
+            bool validStartDate = DateOnly.TryParseExact(
+                startInput,
+                "yyyy-MM-dd",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateOnly startDate);
+
+            bool validEndDate = DateOnly.TryParseExact(
+                endInput,
+                "yyyy-MM-dd",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateOnly endDate);
+
+            if (!validStartDate || !validEndDate)
+            {
+                Console.WriteLine("Fel: Ange datum i formatet åååå-mm-dd.");
+            }
+            else
+            {
+                // Steg 2: Skicka bokningen till BookingService
+                BookingResult result = bookingService.CreateBooking(
+                    customerId,
+                    selectedModelId,
+                    startDate,
+                    endDate);
+
+                if (result.IsSuccess)
+                {
+                    // Steg 19: Visa bokningsbekräftelse
+                    Console.WriteLine();
+                    Console.WriteLine("Bokningen lyckades!");
+
+                    Guid bookingNumber = result.Booking!.BookingNumber;
+
+                    Console.WriteLine($"Bokningsnummer: {bookingNumber}");
+
+                    // TEST: Visa vilket fysiskt exemplar som bokades
+                    Console.WriteLine(
+                        $"TEST: Bokat exemplar-ID: {result.Booking.EquipmentItemId}");
+
+                    // Tillfällig kontroll för US-06:
+                    // Finns samma bokningsnummer i repositoryt?
+                    List<Booking> savedBookings =
+                        bookingRepository.GetBookings();
+
+                    Booking? savedBooking = savedBookings.FirstOrDefault(
+                        booking => booking.BookingNumber == bookingNumber);
+
+                    if (savedBooking != null)
+                    {
+                        Console.WriteLine(
+                            $"TEST: Sparat bokningsnummer: {savedBooking.BookingNumber}");
+
+                        Console.WriteLine(
+                            "TEST: Bokningsnumret finns sparat.");
+                    }
+                    else
+                    {
+                        Console.WriteLine(
+                            "TEST: Bokningen hittades inte i repositoryt.");
+                    }
+                }
+                else
+                {
+                    // Steg 20: Visa felmeddelande
+                    Console.WriteLine($"Fel: {result.ErrorMessage}");
+                }
+            }
+
+            // Steg 21: Fråga om en ny bokning
+            Console.WriteLine();
+            Console.Write("Vill du boka en annan modell? (j/n): ");
+            string? answer = Console.ReadLine();
+
+            // Steg 22: Ta emot kundens svar
+            bookAnotherModel =
+                answer?.Trim().ToLowerInvariant() == "j";
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Tack för att du använde bokningssystemet!");
     }
 }

@@ -1,6 +1,7 @@
 ﻿
 using EquipmentBookingSystem1.Domain;
 
+
 namespace EquipmentBookingSystem1.Application;
 
 public class BookingService
@@ -66,8 +67,16 @@ public class BookingService
         SaveResult saveResult =
             _bookingRepository.SaveBooking(booking);
 
-        // Steg 16–18 implementerar vi härnäst
-        throw new NotImplementedException();
+        // Steg 16: Sparandet misslyckades
+        if (!saveResult.IsSuccess)
+        {
+            return BookingResult.Failure(
+                "Bokningen kunde inte genomföras");
+        }
+
+        // Steg 17: Sparandet lyckades
+        // Steg 18: Returnera resultatet till ConsoleUI
+        return BookingResult.Success(booking);
     }
 
     private bool ValidateBookingPeriod(
