@@ -1,7 +1,7 @@
 ﻿using EquipmentBookingSystem1.Application;
 using EquipmentBookingSystem1.Domain;
 
-namespace EquipmentBookingSystem.Infrastructure;
+namespace EquipmentBookingSystem1.Infrastructure;
 
 public class FailingBookingRepository : IBookingRepository
 {

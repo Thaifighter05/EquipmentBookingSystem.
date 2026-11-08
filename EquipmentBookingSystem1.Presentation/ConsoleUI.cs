@@ -47,10 +47,8 @@ public class ConsoleUI
         // Vanligt läge: Sparar bokningar i minnet.
         services.AddSingleton<IBookingRepository, InMemoryBookingRepository>();
 
-        // TEST steg 16: Simulerar att sparandet misslyckas.
-        // För att testa: Kommentera bort raden ovan och ta bort // på raden nedan.
-        // Byt tillbaka efter testet.
-        // services.AddSingleton<IBookingRepository, FailingBookingRepository>();
+        // TEST steg 16: Simulerar att sparandet misslyckas
+        //services.AddSingleton<IBookingRepository, FailingBookingRepository>();
 
         services.AddSingleton<IReadOnlyList<EquipmentItem>>(equipmentItems);
 
@@ -165,6 +163,22 @@ public class ConsoleUI
 
                         Console.WriteLine(
                             "TEST: Bokningsnumret finns sparat.");
+
+                        // TEST 4.4: Kontrollera uppgifterna i den sparade bokningen
+                        Console.WriteLine(
+                            $"TEST: Sparat exemplar-ID: {savedBooking.EquipmentItemId}");
+
+                        Console.WriteLine(
+                            $"TEST: Kund-ID vid bokning: {customerId}");
+
+                        Console.WriteLine(
+                            $"TEST: Sparat kund-ID: {savedBooking.CustomerId}");
+
+                        Console.WriteLine(
+                            $"TEST: Sparat startdatum: {savedBooking.Period.StartDate:yyyy-MM-dd}");
+
+                        Console.WriteLine(
+                            $"TEST: Sparat slutdatum: {savedBooking.Period.EndDate:yyyy-MM-dd}");
                     }
                     else
                     {
